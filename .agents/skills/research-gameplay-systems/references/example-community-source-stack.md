@@ -4,13 +4,13 @@
 
 ## 1. 研究问题
 
-怎样采集小红书、抖音、B站和小黑盒上的公开游戏攻略，为游戏系统与核心玩法研究建立可追溯语料？
+怎样采集小红书、抖音、快手、B站、微博、贴吧、知乎和小黑盒上的公开游戏攻略，为游戏系统与核心玩法研究建立可追溯语料？
 
 ## 2. 候选项目快照
 
 | 项目 | 当时能力 | 当时活跃度 | 判断 |
 |---|---|---|---|
-| `NanmiCoder/MediaCrawler` | 小红书、抖音、B站等关键词、详情、作者和评论 | 约 5.9 万 Stars；2026-07-24 有推送 | 研究型 MVP 主入口 |
+| `NanmiCoder/MediaCrawler` | 小红书、抖音、快手、B站、微博、贴吧、知乎的关键词、详情、作者和评论 | 约 5.9 万 Stars；2026-07-24 有推送 | 七平台研究型 MVP 主入口 |
 | `apify/crawlee-python` | 通用队列、重试、浏览器和结构化抓取 | 约 9400 Stars；持续更新 | 自建长期适配器底座 |
 | `g1879/DrissionPage` | 浏览器与请求协同 | 约 1.2 万 Stars；持续更新 | 小黑盒半自动适配候选 |
 | `Evil0ctal/Douyin_TikTok_Download_API` | 抖音/快手/TikTok/B站解析下载 | 约 1.9 万 Stars；主要提交停在 2025-10 | 只作已知 URL 媒体补充 |
@@ -52,11 +52,15 @@ GitHub 上当时只有零散小项目：
 ```text
 XiaohongshuAdapter ─┐
 DouyinAdapter ──────┤
-BilibiliAdapter ────┼→ 原始 JSONL → 规范化证据库 → OCR/ASR → 玩法编码 → 调研文档
+KuaishouAdapter ────┤
+BilibiliAdapter ────┤
+WeiboAdapter ───────┼→ 原始 JSONL → 规范化证据库 → OCR/ASR → 玩法编码 → 调研文档
+TiebaAdapter ───────┤
+ZhihuAdapter ───────┤
 HeyboxAdapter ──────┘
 ```
 
-- 小红书、抖音、B站：用当前 MediaCrawler 验证研究流程。
+- 小红书、抖音、快手、B站、微博、贴吧、知乎：用当前 MediaCrawler 验证研究流程；七个平台都有搜索、详情、作者和评论代码路径，运行前仍需逐平台冒烟测试。
 - 小黑盒：保持半自动，避免依赖无人维护的项目。
 - 视频：只对深挖样本用 yt-dlp/faster-whisper。
 - 图片：只对关键图文用 PaddleOCR。

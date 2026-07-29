@@ -12,7 +12,19 @@ from datetime import date
 from pathlib import Path
 
 
-PLATFORMS = ("xhs", "douyin", "bili", "heybox", "official", "gdc", "playtest")
+PLATFORMS = (
+    "xhs",
+    "douyin",
+    "kuaishou",
+    "bili",
+    "weibo",
+    "tieba",
+    "zhihu",
+    "heybox",
+    "official",
+    "gdc",
+    "playtest",
+)
 
 
 def safe_slug(value: str) -> str:

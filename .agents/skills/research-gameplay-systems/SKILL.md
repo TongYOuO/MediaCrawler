@@ -1,6 +1,6 @@
 ---
 name: research-gameplay-systems
-description: 调研游戏系统、核心玩法与竞品设计，使用直接游玩、开发者/GDC材料、补丁说明以及小红书、抖音、B站、小黑盒等玩家攻略建立可追溯证据库。用于需要两阶段完成游戏全景扫描与关键玩法深度拆解、评估高阶玩家观点、采集社区材料、制作玩法调研文档、比较竞品或提炼可迁移设计原则的任务。
+description: 调研游戏系统、核心玩法与竞品设计，使用直接游玩、开发者/GDC材料、补丁说明以及小红书、抖音、快手、B站、微博、贴吧、知乎等玩家攻略建立可追溯证据库。用于需要两阶段完成游戏全景扫描与关键玩法深度拆解、评估高阶玩家观点、采集社区材料、制作玩法调研文档、比较竞品或提炼可迁移设计原则的任务。
 ---
 
 # 游戏系统与核心玩法调研
@@ -12,8 +12,9 @@ description: 调研游戏系统、核心玩法与竞品设计，使用直接游�
 - 开展完整两阶段研究时，读取 [references/research-method.md](references/research-method.md)。
 - 采集或评价社区攻略时，读取 [references/community-source-quality.md](references/community-source-quality.md)。
 - 使用本仓库 MediaCrawler 时，读取 [references/mediacrawler-operations.md](references/mediacrawler-operations.md)。
+- 判断七个平台当前能否实抓时，读取 [references/platform-smoke-test-2026-07-29.md](references/platform-smoke-test-2026-07-29.md)，并按同一通过标准重新测试；该文件只是环境快照。
 - 需要了解本次技术选型实例时，读取 [references/example-community-source-stack.md](references/example-community-source-stack.md)。实例中的活跃度是时间快照，使用前重新核验。
-- 创建交付文档时，复制 [assets/gameplay-research-template.md](assets/gameplay-research-template.md)，或运行初始化脚本。
+- 创建交付文档时，复制“方法说明＋空白模板”合并版 [assets/gameplay-research-template.md](assets/gameplay-research-template.md)，或运行初始化脚本。
 
 ## 工作流
 
@@ -53,6 +54,10 @@ uv run python .agents/skills/research-gameplay-systems/scripts/init_research_cas
 - 遥测、排行榜或比赛记录：估计频率或验证玩家身份。
 
 不要把首页推荐流当样本框。预先建立“游戏名 × 系统/角色/流派 × 攻略/机制/进阶/误区/测试/复盘”等关键词矩阵，并分别采集热门、最新、中长尾和指定作者样本。
+
+默认把小红书、抖音、快手、B站、微博、贴吧和知乎作为候选来源池，但不要求每次等量抓取。先按研究问题选择平台角色：短视频找操作与高频问题，长视频找过程证据，图文和长帖找条件、争议与因果解释，时效平台找版本变化。记录未采平台及原因，避免把“没有采到”误写成“玩家没有讨论”。
+
+2026-07-29 的本机快照中，小红书、抖音、B站和微博完成了搜索、一级评论与单条详情闭环；快手、贴吧和知乎未通过。该结论只用于选择当前案例的数据源，下一次正式研究仍须按冒烟标准复测。
 
 ### 4. 第一阶段：快速全景扫描
 
@@ -107,6 +112,7 @@ uv run python .agents/skills/research-gameplay-systems/scripts/init_research_cas
 - 先检查平台条款、robots、研究目的和适用法律。
 - 本仓库许可证限制为非商业学习研究；企业或商业场景先取得授权或改用获准接口。
 - 原始 JSONL 只作证据快照；分析前复制到案例目录，保留采集时间、查询词和来源 URL。
+- 当前七个平台虽都有采集代码路径，但不构成稳定性承诺；正式批量采集前必须逐平台做一个关键词和一个指定内容的冒烟测试。
 
 ## 完成门槛
 
@@ -114,6 +120,7 @@ uv run python .agents/skills/research-gameplay-systems/scripts/init_research_cas
 - [ ] 全景阶段有三层循环、系统图和资源流。
 - [ ] 深挖对象是可观察、可证伪的玩法问题。
 - [ ] 社区样本不是只取热门或首页推荐。
+- [ ] 七平台已按研究问题完成纳入、排除或失败原因登记，而不是机械等量采集。
 - [ ] 事实、玩家观点、开发者意图和研究者推论分开。
 - [ ] 高影响结论有 Evidence ID、反例和置信度。
 - [ ] 至少两类独立来源支持核心结论，或明确降低置信度。
