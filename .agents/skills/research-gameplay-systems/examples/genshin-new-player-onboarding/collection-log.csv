@@ -1,0 +1,9 @@
+run_id,platform,mode,query_or_id,browser_mode,status,unique_contents,unique_comments,notes
+RUN-XHS-SEARCH,小红书,search,原神 攻略,Chrome 150/CDP,PASS,23,23,两个外层进程中止后子进程继续追加；按 note_id 去重
+RUN-XHS-DETAIL,小红书,detail,完整公开 URL（含当时有效查询参数）,Chrome 150/CDP,PASS,1,1,提交中不保留访问令牌
+RUN-DY-SEARCH,抖音,search,原神 攻略,Playwright Chromium 149 标准模式＋人工登录,PASS,14,14,Chrome 150/CDP 导航失败
+RUN-DY-DETAIL,抖音,detail,7652895180860689716,Playwright Chromium 149 标准模式,PASS,1,1,复用人工保存的登录态
+RUN-BILI-SEARCH,B站,search,原神 攻略,Chrome 150/CDP,PASS,20,20,最小条数仍处理完整首屏
+RUN-BILI-DETAIL,B站,detail,BV19h4y1K7yM,Chrome 150/CDP,PASS,1,1,纯 aid 和 av URL 当前不能被详情解析器接受
+RUN-WB-SEARCH,微博,search,原神 攻略,Chrome 150/CDP,PASS,16,10,开启全文；空评论被错误重试导致耗时较长
+RUN-WB-DETAIL,微博,detail,5254934886881488,Chrome 150/CDP,PASS,1,1,全文与一级评论落盘

@@ -15,6 +15,7 @@ description: 调研游戏系统、核心玩法与竞品设计，使用直接游�
 - 判断七个平台当前能否实抓时，读取 [references/platform-smoke-test-2026-07-29.md](references/platform-smoke-test-2026-07-29.md)，并按同一通过标准重新测试；该文件只是环境快照。
 - 需要了解本次技术选型实例时，读取 [references/example-community-source-stack.md](references/example-community-source-stack.md)。实例中的活跃度是时间快照，使用前重新核验。
 - 创建交付文档时，复制“方法说明＋空白模板”合并版 [assets/gameplay-research-template.md](assets/gameplay-research-template.md)，或运行初始化脚本。
+- 需要查看完成范例时，读取 [examples/genshin-new-player-onboarding/research.md](examples/genshin-new-player-onboarding/research.md)；它是单关键词社区快照的桌面研究，不可替代直接游玩和玩家观察。
 
 ## 工作流
 

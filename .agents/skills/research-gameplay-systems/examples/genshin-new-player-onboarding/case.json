@@ -1,0 +1,12 @@
+{
+  "game": "原神",
+  "research_unit": "新手开荒中的目标选择、资源投入与外部攻略依赖",
+  "snapshot_date": "2026-07-29",
+  "platforms": ["xhs", "douyin", "bili", "weibo"],
+  "query": "原神 攻略",
+  "unique_contents": 73,
+  "unique_first_level_comments": 67,
+  "status": "completed_pilot",
+  "raw_data_committed": false,
+  "direct_play_observation": false
+}
