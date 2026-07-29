@@ -1,4 +1,4 @@
 interface:
-  display_name: "游戏系统与核心玩法调研"
-  short_description: "用七平台社区攻略、实测与开发者材料完成两阶段玩法调研"
-  default_prompt: "使用 $research-gameplay-systems 调研指定游戏的系统和核心玩法，先全景扫描，再深挖关键玩法。"
+  display_name: "游戏系统与核心玩法深度调研"
+  short_description: "用B站完整转写、知乎全文与复现证据完成两阶段玩法研究"
+  default_prompt: "使用 $research-gameplay-systems 调研指定游戏：先做全景扫描，再从B站完整字幕/ASR与知乎全文中筛选高阶玩家或策划分析，建立L0-L3证据链并深拆关键玩法。"

@@ -6,7 +6,11 @@
   "query": "原神 攻略",
   "unique_contents": 73,
   "unique_first_level_comments": 67,
-  "status": "completed_pilot",
+  "status": "d0_discovery_pilot_l0_upgrade_in_progress",
   "raw_data_committed": false,
-  "direct_play_observation": false
+  "direct_play_observation": false,
+  "d0_discovery_only": true,
+  "zhihu_l0_documents": 12,
+  "zhihu_l0_segments": 117,
+  "expert_sources_verified": 0
 }

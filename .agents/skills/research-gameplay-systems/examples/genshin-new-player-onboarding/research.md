@@ -4,9 +4,11 @@ game: "原神"
 mode: "新手开荒/入坑体验"
 snapshot_date: "2026-07-29"
 research_type: "社区材料＋GDC 方法的桌面研究"
-status: "completed_pilot"
-confidence_ceiling: "中；尚无直接游玩和玩家观察"
+status: "d0_discovery_hypothesis"
+confidence_ceiling: "低至中；尚无直接游玩，深度来源仍在 L0/L2 升级"
 ---
+
+> 证据状态纠正（2026-07-29）：本文主要由搜索元数据和评论形成，只能作为 D0 候选发现与研究假设，不能作为高阶玩法/策划分析的完成报告。原始完整内容的位置、知乎 L0 实抓和来源筛选见 [deep-evidence-upgrade.md](deep-evidence-upgrade.md)。本文所有社区结论在完成 B站全文时间戳、知乎全文段落、作者公开依据和 L2 复现前，最高按低至中置信度处理。
 
 # 0. 一页结论
 

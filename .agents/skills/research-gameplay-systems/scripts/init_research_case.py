@@ -70,6 +70,9 @@ def main() -> int:
     case_dir.mkdir(parents=True)
     for platform in PLATFORMS:
         (case_dir / "raw" / platform).mkdir(parents=True)
+    (case_dir / "l0-private" / "bili").mkdir(parents=True)
+    (case_dir / "l0-private" / "zhihu").mkdir()
+    (case_dir / "evidence-slices").mkdir()
     (case_dir / "media-notes").mkdir()
     (case_dir / "analysis").mkdir()
 
@@ -90,11 +93,27 @@ def main() -> int:
         ],
     )
     write_csv(
+        case_dir / "deep-source-register.csv",
+        [
+            "deep_source_id", "platform", "source_role", "title", "public_url",
+            "author_public_basis", "game_version", "published_or_edited_at", "l0_locator",
+            "content_sha256", "quality_score_0_18", "independence_group", "decision", "notes",
+        ],
+    )
+    write_csv(
+        case_dir / "l0-manifest.csv",
+        [
+            "l0_id", "platform", "content_type", "content_id", "public_url", "local_path",
+            "locator_rule", "content_sha256", "duration_or_chars", "coverage_check", "status",
+        ],
+    )
+    write_csv(
         case_dir / "evidence-ledger.csv",
         [
-            "evidence_id", "claim_or_observation", "evidence_type", "platform",
-            "game_version", "conditions", "source_locator", "support_scope",
-            "alternative_explanation", "author_credibility", "evidence_strength", "confidence",
+            "evidence_id", "evidence_level", "claim_or_observation", "evidence_type",
+            "platform", "game_version", "conditions", "l0_locator", "verification_method",
+            "verification_result", "support_scope", "alternative_explanation",
+            "author_credibility", "evidence_strength", "confidence",
         ],
     )
     write_csv(

@@ -1,6 +1,6 @@
 # 使用当前 Fork 采集研究材料
 
-本文对应仓库 `TongYOuO/MediaCrawler`，核对基线为 2026-07-29、应用代码提交 `ba41c95`。运行前先检查当前代码和 `uv run main.py --help`，平台接口可能随时变化。七平台本机实抓结果见 [platform-smoke-test-2026-07-29.md](platform-smoke-test-2026-07-29.md)。
+本文对应仓库 `TongYOuO/MediaCrawler`，核对基线为 2026-07-29。运行前先检查当前提交和 `uv run main.py --help`，平台接口可能随时变化。七平台本机实抓结果见 [platform-smoke-test-2026-07-29.md](platform-smoke-test-2026-07-29.md)。
 
 ## 目录
 
@@ -16,13 +16,16 @@
 
 当前支持 `xhs/dy/ks/bili/wb/tieba/zhihu`，七个平台都存在 `search/detail/creator` 运行路径，也都有一级和二级评论采集逻辑；登录方式为 `qrcode/phone/cookie`。这表示当前代码具备相应能力，不表示平台接口长期稳定或任何查询都一定返回数据。小黑盒没有适配器。
 
-2026-07-29 按“搜索内容落盘＋一级评论落盘＋单条详情复抓”测试，小红书、抖音、B站和微博通过，状态为 `4/7 PASS`。抖音是在 Playwright Chromium 标准模式＋人工登录下通过；Chrome 150/CDP 仍失败。快手、贴吧和知乎未通过，不能因 README 打勾而写成“当前正常”。
+对于深度玩法研究，MediaCrawler 的搜索结果、标题、简介、互动量和评论属于 `D0 候选发现`。B站必须继续获取完整字幕/ASR，知乎必须获取完整回答/文章正文，才形成可供论证的 `L0 原始内容`。采集成功不等于研究证据充分。
+
+2026-07-29 按“搜索内容落盘＋一级评论落盘＋单条详情复抓”严格测试，小红书、抖音、B站和微博通过，状态为 `4/7 PASS`。知乎随后在标准 Playwright＋人工登录下完成“搜索全文落盘→L0 分段”，记为 `PARTIAL-DEEP-TEXT`，但尚未按严格标准复测评论＋详情；快手、贴吧未通过。
 
 这个 Fork 的重要差异：
 
 - 默认 `SAVE_DATA_OPTION = "jsonl"`。
 - CLI 支持关键词、指定内容、指定作者、评论数量、并发和输出目录覆盖。
-- `--creator_id` 当前能覆盖小红书、抖音、快手、B站、微博和贴吧的作者列表；知乎作者模式需暂时在 `config/zhihu_config.py` 修改 `ZHIHU_CREATOR_URL_LIST`。
+- `--creator_id` 能覆盖小红书、抖音、快手、B站、微博、贴吧和知乎的作者列表。
+- `--enable_cdp_mode yes/no` 可在 CDP 与标准 Playwright 浏览器之间切换，便于平台兼容性对照。
 - 小红书、抖音、B站作者 ID 在内容和评论存储时转为匿名哈希，昵称脱敏。
 - 教学版不持久化创作者完整画像、粉丝/关注关系，避免不必要的个人信息收集。
 - 数据库模式首次运行自动建表。
@@ -124,6 +127,27 @@ uv run main.py --platform bili --lt qrcode --type detail `
 
 `--specified_id` 支持逗号分隔列表，并能覆盖七个平台的详情配置。小红书详情 URL 必须包含有效的 `xsec_token` 和 `xsec_source`；从当前搜索结果复制完整 URL，不要只保存 note ID。
 
+B站视频正文不要依赖 MediaCrawler 的标题/简介字段。对已入选的 BV 号生成完整时间戳 L0：
+
+```powershell
+python .agents/skills/research-gameplay-systems/scripts/extract_bilibili_l0.py `
+  --video "BV号或URL" `
+  --output "research-cases/游戏名/l0-private/bili/BV号" `
+  --asr --asr-model small --language auto --beam-size 1 --device auto
+```
+
+先用 `small/auto/beam-size 1` 形成可审读稿；只有关键术语确实需要且 GPU 运行已验证时再用 `large-v3` 重转。脚本默认拒绝 `large-v3` 在 CPU 上运行，避免一条长视频占用数小时；确认接受成本后才显式传 `--allow-large-cpu`。
+
+知乎 JSONL 只有在回答/文章记录包含完整 `content_text` 时才可升级为 L0：
+
+```powershell
+uv run python .agents/skills/research-gameplay-systems/scripts/build_zhihu_l0.py `
+  --input "research-cases/游戏名/raw/zhihu/zhihu_contents.jsonl" `
+  --output "research-cases/游戏名/l0-private/zhihu"
+```
+
+详细筛选、验收和证据升级规则见 [deep-evidence-workflow.md](deep-evidence-workflow.md)。
+
 ### 4.3 指定作者
 
 ```powershell
@@ -135,10 +159,11 @@ uv run main.py --platform dy --lt qrcode --type creator `
 
 本 Fork 会停止落库创作者完整画像，因此作者模式应服务于“定位其公开作品”，而不是建立个人画像。
 
-知乎是当前 CLI 的例外：作者模式代码存在，但 `--creator_id` 尚未写入 `ZHIHU_CREATOR_URL_LIST`。运行前先在 `config/zhihu_config.py` 填入公开作者主页 URL，再执行：
+知乎作者模式可直接传公开作者主页 URL：
 
 ```powershell
 uv run main.py --platform zhihu --lt qrcode --type creator `
+  --creator_id "https://www.zhihu.com/people/公开作者token" `
   --crawler_max_notes_count 20 `
   --save_data_path "research-cases/游戏名/raw"
 ```
@@ -174,8 +199,9 @@ uv run main.py --platform zhihu --lt qrcode --type creator `
 - 时间范围模式为 `all_in_time_range` 或 `daily_limit_in_time_range`。
 - `MAX_NOTES_PER_DAY` 默认只有 1；切换时间范围模式却忘记调整，会误以为搜索漏数据。
 - 普通搜索内部页面大小固定为 20；即使 CLI 把 `crawler_max_notes_count` 设为小于 20，也会提升到至少 20。
-- 搜索落盘生成 `av<aid>` URL，但当前详情解析器只接受 BV 号或含 BV 的 URL；纯 aid 和落盘 `av...` URL 都无法直接复抓。先取得 BV，或修复解析器后再自动串联。
+- 当前 Fork 在 API 返回 `bvid` 时保存标准 BV URL，便于将候选直接交给详情抓取和 L0 转写脚本；旧 JSONL 中的 `av<aid>` 仍可交给 L0 脚本解析。
 - 标题和简介不能替代视频内容；深挖样本需要字幕、转写或逐帧记录。
+- 同一平台、同一浏览器 Profile 的爬虫必须串行运行；并发连接会争用 Profile/Context，出现 `TargetClosedError`、Profile lock 或相互关闭浏览器。
 
 ### 5.5 微博
 
@@ -194,7 +220,10 @@ uv run main.py --platform zhihu --lt qrcode --type creator `
 ### 5.7 知乎
 
 - 指定内容支持回答、专栏文章和 `zvideo` URL；保存内容类型，避免把不同媒介结构强行统一。
-- 作者模式使用 `ZHIHU_CREATOR_URL_LIST`，当前需直接编辑平台配置，不能依赖 CLI 的 `--creator_id` 覆盖。
+- 作者模式可用 CLI `--creator_id` 覆盖 `ZHIHU_CREATOR_URL_LIST`，建议优先跟踪已筛选的公开专业作者，而不是无边界全站搜索。
+- 当前 Fork 会把知乎固定 20 条的 API 首屏按 `--crawler_max_notes_count` 截断后再落盘和抓评论，低频小样本不再被强制扩大到整页。
+- 知乎一级评论会严格遵守 `--max_comments_count_singlenotes`，不会因 API 页大小默认为 10 而意外抓完整页。
+- 知乎日志只打印候选数量、内容 ID、类型和正文长度，不再把整篇文章输出到终端；全文只进入本地 JSONL/L0 包。
 - 问题与回答可能跨越多年；发布日期、编辑时间和适用游戏版本分别核对。
 - 长文逻辑完整仍只是观点证据，关键机制主张应回到录像、规则、补丁或可复现实验验证。
 
@@ -229,11 +258,20 @@ uv run main.py --platform zhihu --lt qrcode --type creator `
 | 扫码成功但仍失败 | 是否有滑块、手机号验证或登录态失效 | 关闭无头，人工完成验证；不要自动绕过 |
 | 小红书详情为空/JSON 错误 | URL 是否带当前有效 `xsec_token/xsec_source` | 从同一登录态下的搜索结果复制完整 URL |
 | B站时间搜索结果过少 | `BILI_SEARCH_MODE`、日期范围、`MAX_NOTES_PER_DAY` | 明确选择模式并提高每日上限；记录该配置 |
-| B站用搜索落盘的 `av...` URL 做详情失败 | 详情解析器只提取 BV | 用 BV 号/含 BV 的 URL；后续修复 aid/av 支持 |
+| B站旧搜索结果只有 `av...` URL | 旧记录生成于标准 BV URL 修复之前 | 直接把 `av...` 交给 L0 脚本，或从 view API/页面补得 BV 后再跑 MediaCrawler detail |
+| B站 ASR 报 `cublas64_12.dll`/cuDNN 缺失 | Windows 未搜索 pip 安装的 `site-packages/nvidia/*/bin` | L0 脚本会注册 DLL 目录并在失败时回退 CPU；检查 `metadata.json` 的设备与回退原因 |
+| B站媒体 CDN 在 TLS 握手时报超时 | 临时网络/CDN 节点不稳定，元数据 API 仍可能正常 | L0 脚本有限重试 3 次并清理残片；仍失败就换时段重跑，不把空目录或半截媒体登记为 L0 |
+| B站视频页面 35 分钟，但 ASR 只到 11 分钟 | CDN 返回了可正常结束、但时长不足的媒体文件 | 当前脚本在 ASR 前用 `ffprobe` 对照页面时长，低于 90% 直接失败；重新取得播放 URL，不登记旧包 |
+| B站标题或 ASR 出现 `ã€...` / `´ó¼Ò...` | UTF-8 或 GBK 字节被按 Latin-1 解码 | 当前脚本按中文可读性修复常见模式；仍要抽查角色名、数值、否定词，不把自动修复当内容校对 |
+| 英文访谈被转成“通顺的繁体中文”且时长覆盖正常 | 强制 `--language zh` 会让 ASR 在错误语言上幻听；覆盖率只证明媒体完整 | 默认使用 `--language auto`，或已知语言显式传 `en/zh`；抽查开头、中段、结尾并记录 detected language |
+| `large-v3` 转写长视频数小时无输出 | CUDA 运行时失败后落到 CPU，模型和 beam 过重 | 默认已禁止 large-v3 CPU；先用 `small --beam-size 1` 审读，只有关键样本再在已验证 GPU 上升级；显式 `--allow-large-cpu` 表示接受成本 |
+| 同平台第二条爬虫报 Profile lock/`TargetClosedError` | 两个任务复用同一个 Playwright/CDP Profile | 停止第二条任务并串行运行；不同输出目录不能隔离浏览器 Profile |
+| 停止二维码爬虫后相册/WPS 也被关闭 | 临时二维码 PNG 由系统关联程序打开，可能成为爬虫进程树子进程 | 只精确停止已核对命令行的爬虫进程；清理进程树前先列出子进程，避免误关用户正在使用的查看器 |
 | 微博搜索很快触发验证或失败 | `ENABLE_WEIBO_FULL_TEXT=True` 导致逐帖详情请求 | 全景阶段按需关闭全文，小样本运行；选中内容后再 detail |
 | 微博无评论帖子重复报错、运行很慢 | “无评论”文本被当成 `DataFetchError` 重试 | 测试时选择已知有评论内容；后续把明确空响应改为空列表 |
 | 贴吧只看到主楼或一级回复 | 二级评论默认关闭 | 深挖阶段显式 `--get_sub_comment yes`，并保留父回复 ID |
-| 知乎 `--creator_id` 看似无效 | 当前 CLI 未覆盖 `ZHIHU_CREATOR_URL_LIST` | 先在 `config/zhihu_config.py` 写入公开作者主页 URL，再运行 creator |
+| 知乎 CDP 在创建页面前 `TargetClosedError` | Chrome/CDP Context 生命周期或版本兼容 | 用 `--enable_cdp_mode no` 切换标准 Playwright 浏览器对照，并保留独立本地登录态 |
+| 知乎已有登录态却突然进入扫码、随后找不到二维码 | `pong` 可能因 `ReadTimeout` 被当作未登录；登录页二维码 DOM 也可能已变化 | 先把网络超时与明确未登录响应分开；不要因一次超时清空登录结论，更新 `canvas.Qrcode-qrcode` 选择器后再复测 |
 | 只得到内容没有评论 | `--get_comment`、评论上限、平台返回权限 | 先以一个公开内容做 detail 冒烟测试 |
 | 二级评论缺失 | 默认关闭，或一级评论无回复 | 深挖阶段显式 `--get_sub_comment yes`，控制单帖上限 |
 | 输出目录找不到 | `SAVE_DATA_PATH` 后仍按平台/格式分层 | 从指定目录递归查找当天 JSONL |
@@ -241,7 +279,7 @@ uv run main.py --platform zhihu --lt qrcode --type creator `
 | 命令参数看似无效 | 平台专属参数仍在配置文件 | 运行 `uv run main.py --help`，再检查对应 `config/*_config.py` |
 | 接口突然失败 | 平台页面/API 变化、Cookie 失效或项目版本变化 | 小样本冒烟测试；记录提交号；不要用加并发掩盖适配故障 |
 | `uv sync` 下载包返回 403 | 默认清华镜像缺包、缓存路径失效或镜像拒绝 | 当前会话临时设 `UV_DEFAULT_INDEX=https://pypi.org/simple`；保留锁文件并检查是否产生纯源地址改写 |
-| Windows 上 `test_no_user_info.py` 调用 `grep` 失败或扫描到仓库根目录 | 测试依赖 GNU grep，MSYS 对 `G:\...` 参数的路径解释也可能偏离 `store/` | 将其视为测试可移植性问题；不要误判为业务回归，改在 Git Bash/WSL 复验或后续把测试改为 Python/`rg` 实现 |
+| 旧提交在 Windows 上 `test_no_user_info.py` 调用 `grep` 失败 | 测试依赖 GNU grep | 当前 Fork 已改为纯 Python 扫描；旧提交可在 Git Bash/WSL 复验 |
 | Skill 工具读取中文报 GBK 错误 | Windows 默认编码不是 UTF-8 | 在当前 PowerShell 命令设置 `$env:PYTHONUTF8='1'` 后重跑，不修改全局环境 |
 | 抖音/快手首页 `Page.goto` 报 `ERR_ABORTED` 或 30 秒超时 | Chrome 150/CDP 导航兼容问题 | 安装 Playwright Chromium，临时设 `ENABLE_CDP_MODE=False` 对照；抖音已在该路径通过，快手搜索仍为空 |
 | 抖音登录按钮点击超时 | 页面 DOM 已变化，登录遮罩或 `uc-second-verify` 拦截旧选择器 | 保持可见窗口人工完成验证并保存登录态；不绕过验证；更新登录选择器后再自动化 |

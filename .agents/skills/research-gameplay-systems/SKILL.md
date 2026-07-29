@@ -1,6 +1,6 @@
 ---
 name: research-gameplay-systems
-description: 调研游戏系统、核心玩法与竞品设计，使用直接游玩、开发者/GDC材料、补丁说明以及小红书、抖音、快手、B站、微博、贴吧、知乎等玩家攻略建立可追溯证据库。用于需要两阶段完成游戏全景扫描与关键玩法深度拆解、评估高阶玩家观点、采集社区材料、制作玩法调研文档、比较竞品或提炼可迁移设计原则的任务。
+description: 调研游戏系统、核心玩法与竞品设计，使用直接游玩、开发者/GDC材料、补丁说明、B站完整字幕/转写、知乎长文及其他社区材料建立可追溯证据库。用于需要两阶段完成游戏全景扫描与关键玩法深度拆解、筛选高阶玩家或策划分析、制作玩法调研文档、比较竞品或提炼可迁移设计原则的任务。
 ---
 
 # 游戏系统与核心玩法调研
@@ -11,11 +11,15 @@ description: 调研游戏系统、核心玩法与竞品设计，使用直接游�
 
 - 开展完整两阶段研究时，读取 [references/research-method.md](references/research-method.md)。
 - 采集或评价社区攻略时，读取 [references/community-source-quality.md](references/community-source-quality.md)。
+- 需要从 B站视频或知乎长文提炼高阶玩法/策划分析时，必须读取 [references/deep-evidence-workflow.md](references/deep-evidence-workflow.md)。
 - 使用本仓库 MediaCrawler 时，读取 [references/mediacrawler-operations.md](references/mediacrawler-operations.md)。
 - 判断七个平台当前能否实抓时，读取 [references/platform-smoke-test-2026-07-29.md](references/platform-smoke-test-2026-07-29.md)，并按同一通过标准重新测试；该文件只是环境快照。
 - 需要了解本次技术选型实例时，读取 [references/example-community-source-stack.md](references/example-community-source-stack.md)。实例中的活跃度是时间快照，使用前重新核验。
 - 创建交付文档时，复制“方法说明＋空白模板”合并版 [assets/gameplay-research-template.md](assets/gameplay-research-template.md)，或运行初始化脚本。
-- 需要查看完成范例时，读取 [examples/genshin-new-player-onboarding/research.md](examples/genshin-new-player-onboarding/research.md)；它是单关键词社区快照的桌面研究，不可替代直接游玩和玩家观察。
+- 需要查看完成范例时：
+  - [《糖豆人》淘汰赛循环与局外付费](examples/fall-guys-elimination-monetization/research.md)：完整两阶段案例，含 B站全片 ASR、知乎全文、官方规则和 GDC 运维证据。
+  - [《杀戮尖塔》核心循环](examples/slay-the-spire-core-loop/research.md)：开发者/GDC＋高难玩家长文案例，并与《糖豆人》做失败承接和商业模式对照。
+  - [《原神》新手引导](examples/genshin-new-player-onboarding/research.md)：社区候选发现试点，不是完成的深度玩法研究；B站 L0 转写尝试失败，不能据此下高阶机制结论。
 
 ## 工作流
 
@@ -51,14 +55,15 @@ uv run python .agents/skills/research-gameplay-systems/scripts/init_research_cas
 - 直接游玩、录像或可复现实验：说明规则和行为怎样发生。
 - 开发者分享、GDC、补丁说明：说明意图、迭代与约束。
 - Wiki、规则页、官方数据：核对事实与版本。
-- 社区攻略、评论和高阶玩家复盘：发现策略、心智模型、争议和反例。
+- B站完整视频、知乎长文和高阶玩家复盘：获得带条件、过程、因果和边界的深度解释。
+- 搜索结果、简介和评论：只用于发现候选、术语、争议和反例，除非研究问题本身就是舆情或玩家反应。
 - 遥测、排行榜或比赛记录：估计频率或验证玩家身份。
 
 不要把首页推荐流当样本框。预先建立“游戏名 × 系统/角色/流派 × 攻略/机制/进阶/误区/测试/复盘”等关键词矩阵，并分别采集热门、最新、中长尾和指定作者样本。
 
-默认把小红书、抖音、快手、B站、微博、贴吧和知乎作为候选来源池，但不要求每次等量抓取。先按研究问题选择平台角色：短视频找操作与高频问题，长视频找过程证据，图文和长帖找条件、争议与因果解释，时效平台找版本变化。记录未采平台及原因，避免把“没有采到”误写成“玩家没有讨论”。
+默认把小红书、抖音、快手、B站、微博、贴吧和知乎作为候选来源池，但不要求每次等量抓取。深度玩法研究优先使用 B站完整视频和知乎完整回答/文章；短视频与评论用于发现操作、术语、高频问题和反例。记录未采平台及原因，避免把“没有采到”误写成“玩家没有讨论”。
 
-2026-07-29 的本机快照中，小红书、抖音、B站和微博完成了搜索、一级评论与单条详情闭环；快手、贴吧和知乎未通过。该结论只用于选择当前案例的数据源，下一次正式研究仍须按冒烟标准复测。
+2026-07-29 的严格全链路快照中，小红书、抖音、B站和微博完成了搜索、一级评论与单条详情闭环；知乎随后在标准 Playwright 模式完成登录、搜索全文落盘、指定详情正文/评论和 L0 分段，但这些成功尚未在“修复后的严格条数上限”下完成同一次闭环，因此记为 `PARTIAL-DEEP-TEXT`，不是严格 PASS。快手、贴吧仍未通过。下一次正式研究须按冒烟标准复测。
 
 ### 4. 第一阶段：快速全景扫描
 
@@ -84,6 +89,8 @@ uv run python .agents/skills/research-gameplay-systems/scripts/init_research_cas
 同时检查规则与状态、决策质量、系统耦合、学习与精通、挑战成分、失败恢复、节奏中断、受众取舍和迭代历史。
 
 ### 6. 编码社区证据
+
+先执行证据升级：`D0 候选发现 → L0 完整原文/转写 → L1 原子主张 → L2 复现/交叉验证 → L3 设计综合`。MediaCrawler 搜索结果、标题、互动量和评论默认只停留在 D0；没有 B站时间戳或知乎全文段落定位，不得作为深度玩法结论的 L0。
 
 把每条材料拆成最小主张，至少标记：
 
@@ -121,9 +128,12 @@ uv run python .agents/skills/research-gameplay-systems/scripts/init_research_cas
 - [ ] 全景阶段有三层循环、系统图和资源流。
 - [ ] 深挖对象是可观察、可证伪的玩法问题。
 - [ ] 社区样本不是只取热门或首页推荐。
+- [ ] D0 候选发现与 L0 完整内容明确分层，没有用标题、摘要或评论替代原论证。
+- [ ] B站核心材料有完整字幕/ASR 和时间戳；知乎核心材料有完整正文、段落定位与正文哈希。
+- [ ] 深度来源已按问题匹配、论证完整、一手证据、作者依据、版本和自我校验筛选。
 - [ ] 七平台已按研究问题完成纳入、排除或失败原因登记，而不是机械等量采集。
 - [ ] 事实、玩家观点、开发者意图和研究者推论分开。
 - [ ] 高影响结论有 Evidence ID、反例和置信度。
-- [ ] 至少两类独立来源支持核心结论，或明确降低置信度。
+- [ ] 每条高影响结论可沿 `L3 → L2 → L1 → L0` 回溯，并由两名独立作者或一份来源＋直接复现支持。
 - [ ] 迁移建议写明前置条件、失效边界和最小验证。
 - [ ] 原始账号凭证、个人信息和受版权保护的大体量内容未进入提交。

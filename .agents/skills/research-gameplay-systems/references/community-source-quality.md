@@ -29,6 +29,19 @@
 
 将社区来源视为“问题发现器、策略样本和心智模型证据”，再用直接游玩、规则资料、录像或数据验证。
 
+### 1.1 候选发现不是深度原文
+
+对玩法与系统设计研究使用以下边界：
+
+| 数据 | 默认层级 | 用途 |
+|---|---|---|
+| 搜索结果、标题、简介、互动量 | D0 候选发现 | 找主题、作者和术语 |
+| 评论、弹幕 | D0；研究玩家反应时可作为该反应的 L0 | 找争议、误区、反例；不能替代正文论证 |
+| B站完整字幕/ASR＋时间戳 | L0 原始内容 | 提取作者的条件、过程、因果和边界 |
+| 知乎完整回答/文章＋段落定位 | L0 原始内容 | 提取系统分析、策划推理和引用链 |
+
+深度玩法研究必须按 [deep-evidence-workflow.md](deep-evidence-workflow.md) 将 D0 候选升级为 L0 原文，再拆成原子主张并验证。只有舆情研究可以把评论本身作为主要研究对象。
+
 ## 2. 关键词与分层采样
 
 ### 2.1 建立关键词矩阵
@@ -148,6 +161,7 @@
 
 ```yaml
 evidence_id:
+evidence_level: D0 | L0 | L1 | L2 | L3
 platform:
 content_id:
 source_url:
@@ -162,12 +176,16 @@ title:
 body:
 transcript:
 transcript_timestamp:
+l0_locator:
+content_sha256:
 comment_id:
 parent_comment_id:
 comment_text:
 engagement:
 author_hash:
 author_credibility:
+author_public_basis:
+independence_group:
 claim_type:
 evidence_strength:
 confidence:
