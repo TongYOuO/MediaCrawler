@@ -225,6 +225,15 @@ async def parse_cmd(argv: Optional[Sequence[str]] = None):
                 show_default=True,
             ),
         ] = str(config.HEADLESS),
+        enable_cdp_mode: Annotated[
+            str,
+            typer.Option(
+                "--enable_cdp_mode",
+                help="Whether to use CDP instead of the standard Playwright browser, supports yes/true/t/y/1 or no/false/f/n/0",
+                rich_help_panel="Runtime Configuration",
+                show_default=True,
+            ),
+        ] = str(config.ENABLE_CDP_MODE),
         save_data_option: Annotated[
             SaveDataOptionEnum,
             typer.Option(
@@ -338,6 +347,7 @@ async def parse_cmd(argv: Optional[Sequence[str]] = None):
         enable_comment = _to_bool(get_comment)
         enable_sub_comment = _to_bool(get_sub_comment)
         enable_headless = _to_bool(headless)
+        enable_cdp_mode_value = _to_bool(enable_cdp_mode)
         enable_ip_proxy_value = _to_bool(enable_ip_proxy)
         init_db_value = init_db.value if init_db else None
 
@@ -355,6 +365,7 @@ async def parse_cmd(argv: Optional[Sequence[str]] = None):
         config.ENABLE_GET_SUB_COMMENTS = enable_sub_comment
         config.HEADLESS = enable_headless
         config.CDP_HEADLESS = enable_headless
+        config.ENABLE_CDP_MODE = enable_cdp_mode_value
         config.SAVE_DATA_OPTION = save_data_option.value
         config.COOKIES = cookies
         config.CRAWLER_MAX_COMMENTS_COUNT_SINGLENOTES = max_comments_count_singlenotes
@@ -400,6 +411,8 @@ async def parse_cmd(argv: Optional[Sequence[str]] = None):
                 config.TIEBA_CREATOR_URL_LIST = [
                     _normalize_tieba_creator_url(item) for item in creator_id_list
                 ]
+            elif platform == PlatformEnum.ZHIHU:
+                config.ZHIHU_CREATOR_URL_LIST = creator_id_list
 
         return SimpleNamespace(
             platform=config.PLATFORM,
@@ -410,6 +423,7 @@ async def parse_cmd(argv: Optional[Sequence[str]] = None):
             get_comment=config.ENABLE_GET_COMMENTS,
             get_sub_comment=config.ENABLE_GET_SUB_COMMENTS,
             headless=config.HEADLESS,
+            enable_cdp_mode=config.ENABLE_CDP_MODE,
             save_data_option=config.SAVE_DATA_OPTION,
             init_db=init_db_value,
             cookies=config.COOKIES,

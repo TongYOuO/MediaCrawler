@@ -150,23 +150,15 @@ class ZhihuCrawler(AbstractCrawler):
     async def search(self) -> None:
         """Search for notes and retrieve their comment information."""
         utils.logger.info("[ZhihuCrawler.search] Begin search zhihu keywords")
-        zhihu_limit_count = 20  # zhihu limit page fixed value
-        if config.CRAWLER_MAX_NOTES_COUNT < zhihu_limit_count:
-            config.CRAWLER_MAX_NOTES_COUNT = zhihu_limit_count
         start_page = config.START_PAGE
         for keyword in config.KEYWORDS.split(","):
             source_keyword_var.set(keyword)
             utils.logger.info(
                 f"[ZhihuCrawler.search] Current search keyword: {keyword}"
             )
-            page = 1
-            while (
-                page - start_page + 1
-            ) * zhihu_limit_count <= config.CRAWLER_MAX_NOTES_COUNT:
-                if page < start_page:
-                    utils.logger.info(f"[ZhihuCrawler.search] Skip page {page}")
-                    page += 1
-                    continue
+            page = start_page
+            collected_count = 0
+            while collected_count < config.CRAWLER_MAX_NOTES_COUNT:
 
                 try:
                     utils.logger.info(
@@ -179,11 +171,14 @@ class ZhihuCrawler(AbstractCrawler):
                         )
                     )
                     utils.logger.info(
-                        f"[ZhihuCrawler.search] Search contents :{content_list}"
+                        "[ZhihuCrawler.search] Extracted %s candidate contents",
+                        len(content_list),
                     )
                     if not content_list:
                         utils.logger.info("No more content!")
                         break
+                    remaining = config.CRAWLER_MAX_NOTES_COUNT - collected_count
+                    content_list = content_list[:remaining]
 
                     # Sleep after page navigation
                     await asyncio.sleep(config.CRAWLER_MAX_SLEEP_SEC)
@@ -194,6 +189,7 @@ class ZhihuCrawler(AbstractCrawler):
                         await zhihu_store.update_zhihu_content(content)
 
                     await self.batch_get_content_comments(content_list)
+                    collected_count += len(content_list)
                 except DataFetchError:
                     utils.logger.error("[ZhihuCrawler.search] Search content error")
                     return
@@ -247,6 +243,7 @@ class ZhihuCrawler(AbstractCrawler):
                 content=content_item,
                 crawl_interval=config.CRAWLER_MAX_SLEEP_SEC,
                 callback=zhihu_store.batch_update_zhihu_note_comments,
+                max_count=config.CRAWLER_MAX_COMMENTS_COUNT_SINGLENOTES,
             )
 
     async def get_creators_and_notes(self) -> None:

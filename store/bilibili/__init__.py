@@ -57,6 +57,12 @@ async def update_bilibili_video(video_item: Dict):
     video_user_info: Dict = video_item_view.get("owner")
     video_item_stat: Dict = video_item_view.get("stat")
     video_id = str(video_item_view.get("aid"))
+    video_bvid = str(video_item_view.get("bvid") or "")
+    video_url = (
+        f"https://www.bilibili.com/video/{video_bvid}"
+        if video_bvid
+        else f"https://www.bilibili.com/video/av{video_id}"
+    )
     save_content_item = {
         "video_id": video_id,
         "video_type": "video",
@@ -74,7 +80,7 @@ async def update_bilibili_video(video_item: Dict):
         "video_danmaku": str(video_item_stat.get("danmaku", "")),
         "video_comment": str(video_item_stat.get("reply", "")),
         "last_modify_ts": utils.get_current_timestamp(),
-        "video_url": f"https://www.bilibili.com/video/av{video_id}",
+        "video_url": video_url,
         "video_cover_url": video_item_view.get("pic", ""),
         "source_keyword": source_keyword_var.get(),
     }

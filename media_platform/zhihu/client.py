@@ -225,7 +225,11 @@ class ZhiHuClient(AbstractApiClient, ProxyRefreshMixin):
             "vertical": note_type.value,
         }
         search_res = await self.get(uri, params)
-        utils.logger.info(f"[ZhiHuClient.get_note_by_keyword] Search result: {search_res}")
+        utils.logger.info(
+            "[ZhiHuClient.get_note_by_keyword] Search returned %s raw items, is_end=%s",
+            len(search_res.get("data", [])),
+            search_res.get("paging", {}).get("is_end"),
+        )
         return self._extractor.extract_contents_from_search(search_res)
 
     async def get_root_comments(
@@ -290,6 +294,7 @@ class ZhiHuClient(AbstractApiClient, ProxyRefreshMixin):
         content: ZhihuContent,
         crawl_interval: float = 1.0,
         callback: Optional[Callable] = None,
+        max_count: int = 0,
     ) -> List[ZhihuComment]:
         """
         Get all root-level comments for a specified post, this method will retrieve all comment information under a post
@@ -305,7 +310,7 @@ class ZhiHuClient(AbstractApiClient, ProxyRefreshMixin):
         is_end: bool = False
         offset: str = ""
         prev_offset: str = ""
-        limit: int = 10
+        limit: int = min(10, max_count) if max_count > 0 else 10
         while not is_end:
             prev_offset = offset
             root_comment_res = await self.get_root_comments(content.content_id, content.content_type, offset, limit)
@@ -322,11 +327,16 @@ class ZhiHuClient(AbstractApiClient, ProxyRefreshMixin):
             if prev_offset == offset:
                 break
 
+            if max_count > 0:
+                comments = comments[: max_count - len(result)]
+
             if callback:
                 await callback(comments)
 
             result.extend(comments)
             await self.get_comments_all_sub_comments(content, comments, crawl_interval=crawl_interval, callback=callback)
+            if max_count > 0 and len(result) >= max_count:
+                break
             await asyncio.sleep(crawl_interval)
         return result
 

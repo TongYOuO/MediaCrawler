@@ -81,7 +81,12 @@ async def update_zhihu_content(content_item: ZhihuContent):
     content_item.source_keyword = source_keyword_var.get()
     local_db_item = content_item.model_dump()
     local_db_item.update({"last_modify_ts": utils.get_current_timestamp()})
-    utils.logger.info(f"[store.zhihu.update_zhihu_content] zhihu content: {local_db_item}")
+    utils.logger.info(
+        "[store.zhihu.update_zhihu_content] content_id=%s type=%s text_chars=%s",
+        content_item.content_id,
+        content_item.content_type,
+        len(content_item.content_text or ""),
+    )
     await ZhihuStoreFactory.create_store().store_content(local_db_item)
 
 
@@ -113,7 +118,12 @@ async def update_zhihu_content_comment(comment_item: ZhihuComment):
     """
     local_db_item = comment_item.model_dump()
     local_db_item.update({"last_modify_ts": utils.get_current_timestamp()})
-    utils.logger.info(f"[store.zhihu.update_zhihu_note_comment] zhihu content comment:{local_db_item}")
+    utils.logger.info(
+        "[store.zhihu.update_zhihu_note_comment] comment_id=%s content_id=%s text_chars=%s",
+        comment_item.comment_id,
+        comment_item.content_id,
+        len(comment_item.content or ""),
+    )
     await ZhihuStoreFactory.create_store().store_comment(local_db_item)
 
 
