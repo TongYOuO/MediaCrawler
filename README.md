@@ -379,6 +379,7 @@ MediaCrawler 支持多种数据存储方式，包括 CSV、JSON、JSONL、Excel�
 - **常见问题**：[MediaCrawler 完整文档](https://nanmicoder.github.io/MediaCrawler/)
 - **爬虫入门教程**：[CrawlerTutorial 免费教程](https://github.com/NanmiCoder/CrawlerTutorial)
 - **新闻爬虫开源项目**：[NewsCrawlerCollection](https://github.com/NanmiCoder/NewsCrawlerCollection)
+- **游戏系统与核心玩法调研 Skill**：[research-gameplay-systems](.agents/skills/research-gameplay-systems/SKILL.md)，包含两阶段研究方法、社区攻略采样与可信度、当前 Fork 配置/踩坑、空白模板和技术选型实例。
 
 
 ## ⭐ Star 趋势图

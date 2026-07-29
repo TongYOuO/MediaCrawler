@@ -1,0 +1,4 @@
+interface:
+  display_name: "游戏系统与核心玩法调研"
+  short_description: "用社区攻略、实测与开发者材料完成两阶段游戏系统与核心玩法调研"
+  default_prompt: "使用 $research-gameplay-systems 调研指定游戏的系统和核心玩法，先全景扫描，再深挖关键玩法。"
