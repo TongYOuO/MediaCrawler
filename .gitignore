@@ -167,6 +167,12 @@ cython_debug/
 /data/
 **/l0-private/
 
+# 研究原始数据：平台正文、评论和媒体只留在本地作证据快照。
+# README.md、index.csv 和 URL 清单不含正文，仍可提交。
+artifacts/**/RawData/**/_scan*/
+artifacts/**/RawData/**/_comments/
+artifacts/**/RawData/**/contents.jsonl
+
 */.DS_Store
 .vscode
 /node_modules

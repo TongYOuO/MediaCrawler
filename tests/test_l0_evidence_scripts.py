@@ -227,3 +227,142 @@ def test_research_case_initializes_deep_evidence_structure(tmp_path, monkeypatch
     assert (case_dir / "l0-private" / "zhihu").is_dir()
     assert (case_dir / "deep-source-register.csv").is_file()
     assert (case_dir / "l0-manifest.csv").is_file()
+
+
+def test_zhihu_media_skips_noscript_duplicate_of_every_figure():
+    module = load_script("extract_zhihu_media.py")
+    # Zhihu ships each figure twice: a <noscript> copy plus the lazy-loaded one.
+    html = (
+        "<p>机制说明如下。</p>"
+        "<figure>"
+        "<noscript><img src=\"https://pic1.zhimg.com/v2-a.jpg\" data-rawwidth=\"800\"></noscript>"
+        "<img class=\"lazy\" src=\"https://pic1.zhimg.com/v2-a_b.jpg\""
+        " data-original=\"https://pic1.zhimg.com/v2-a.jpg\" data-rawwidth=\"800\">"
+        "<figcaption>伤害结算顺序</figcaption>"
+        "</figure>"
+    )
+    assets = module.collect_assets(html)
+    assert len(assets) == 1
+    # data-original is the full-resolution asset; src is a blurred thumbnail.
+    assert assets[0]["source_url"] == "https://pic1.zhimg.com/v2-a.jpg"
+    assert assets[0]["caption"] == "伤害结算顺序"
+    assert assets[0]["asset_kind"] == "image"
+
+
+def test_zhihu_media_anchors_asset_to_preceding_plain_text():
+    module = load_script("extract_zhihu_media.py")
+    html = "<p>前面的机制描述。</p><img data-original=\"https://pic1.zhimg.com/v2-b.png\"><p>后续说明。</p>"
+    asset = module.collect_assets(html)[0]
+    assert asset["text_offset"] == len("前面的机制描述。")
+    assert asset["preceding_text"].endswith("前面的机制描述。")
+
+    segments = [
+        {"segment_id": "ZH-answer-1-P0001", "text": "前面的机制描述。", "char_start": 0, "char_end": 8},
+        {"segment_id": "ZH-answer-1-P0002", "text": "后续说明。", "char_start": 8, "char_end": 13},
+    ]
+    assert module.locate_segment(segments, asset) == "ZH-answer-1-P0001"
+
+
+def test_zhihu_media_records_formula_tex_instead_of_downloading_it():
+    module = load_script("extract_zhihu_media.py")
+    html = r'<p>期望值</p><img eeimg="1" data-formula="E = \sum p_i v_i" src="//zhihu.com/equation?tex=E">'
+    assets = module.collect_assets(html)
+    assert len(assets) == 1
+    assert assets[0]["asset_kind"] == "formula"
+    assert assets[0]["formula_tex"] == r"E = \sum p_i v_i"
+
+
+def test_zhihu_media_detects_animated_gif_and_file_extension():
+    module = load_script("extract_zhihu_media.py")
+    still = b"GIF89a" + b"\x00" * 32 + b"\x21\xf9\x04" + b"\x00" * 8
+    animated = still + b"\x21\xf9\x04" + b"\x00" * 8
+    assert module.is_animated_gif(animated) is True
+    assert module.is_animated_gif(still) is False
+    assert module.is_animated_gif(b"\x89PNG\r\n\x1a\n") is False
+    assert module.extension_for("https://pic1.zhimg.com/x", animated) == ".gif"
+    assert module.extension_for("https://pic1.zhimg.com/x", b"\x89PNG\r\n\x1a\n") == ".png"
+
+
+def test_zhihu_media_extracts_content_html_from_init_data():
+    module = load_script("extract_zhihu_media.py")
+    payload = json.dumps(
+        {"initialState": {"entities": {"answers": {"100": {"content": "<p>正文</p><img src=\"a.jpg\">"}}}}}
+    )
+    doc = {"content_type": "answer", "content_id": "100"}
+    assert module.extract_content_html(payload, doc) == "<p>正文</p><img src=\"a.jpg\">"
+    assert module.extract_content_html("", doc) == ""
+    assert module.extract_content_html("not json", doc) == ""
+    # An article id must not be read out of the answers bucket.
+    assert module.extract_content_html(payload, {"content_type": "article", "content_id": "100"}) == ""
+
+
+def _zhihu_rows():
+    return [
+        # short controversy reply: high votes, no depth
+        {"content_id": "1", "content_type": "answer", "title": "如何看待《测试游戏2》的争议？",
+         "content_text": "不买了。", "voteup_count": 900, "content_url": "u1", "source_keyword": "测试游戏2"},
+        # mechanism teardown: almost no votes, real depth
+        {"content_id": "2", "content_type": "article", "title": "《测试游戏2》系统策划拆解",
+         "content_text": "机制说明。" * 400, "voteup_count": 1, "content_url": "u2", "source_keyword": "测试游戏2"},
+        # different game with a colliding name
+        {"content_id": "3", "content_type": "answer", "title": "杀戮空间2 综合教学",
+         "content_text": "测试游戏2 " * 50, "voteup_count": 500, "content_url": "u3", "source_keyword": "测试游戏2"},
+        # passing mention only
+        {"content_id": "4", "content_type": "answer", "title": "有哪些好玩的游戏？",
+         "content_text": "比如测试游戏2。" + "别的内容。" * 100, "voteup_count": 5, "content_url": "u4",
+         "source_keyword": "测试游戏2"},
+    ]
+
+
+def test_zhihu_selection_keeps_low_vote_long_form_and_drops_name_collision(tmp_path, monkeypatch):
+    module = load_script("select_zhihu_candidates.py")
+    input_path = tmp_path / "scan.jsonl"
+    input_path.write_text(
+        "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in _zhihu_rows()),
+        encoding="utf-8",
+    )
+    output = tmp_path / "selected"
+    monkeypatch.setattr(sys, "argv", [
+        "select_zhihu_candidates.py", "--input", str(input_path), "--output", str(output),
+        "--match", r"测试游戏\s*2", "--exclude", "杀戮空间", "--min-votes", "100", "--min-chars", "2000",
+    ])
+    assert module.main() == 0
+
+    selected = [json.loads(l) for l in (output / "contents.jsonl").read_text(encoding="utf-8").splitlines() if l]
+    by_id = {row["content_id"]: row for row in selected}
+    # the 1-upvote teardown must survive purely on length
+    assert by_id["2"]["selection_tier"] == "long_form"
+    # the short controversy reply still qualifies on votes
+    assert by_id["1"]["selection_tier"] == "high_vote"
+    # a different game sharing part of the name must not leak in
+    assert "3" not in by_id
+    # a passing mention is graded C and never selected
+    assert "4" not in by_id
+    assert (output / "selection-report.md").is_file()
+    # only long-form entries feed the follow-up comment/media pass
+    assert (output / "longform_urls.txt").read_text(encoding="utf-8").strip() == "u2"
+
+
+def test_zhihu_selection_dedupes_across_keywords_keeping_longest_body(tmp_path, monkeypatch):
+    module = load_script("select_zhihu_candidates.py")
+    input_path = tmp_path / "scan.jsonl"
+    rows = [
+        {"content_id": "9", "content_type": "article", "title": "《测试游戏2》拆解",
+         "content_text": "短版本。", "voteup_count": 500, "content_url": "u9", "source_keyword": "关键词甲"},
+        {"content_id": "9", "content_type": "article", "title": "《测试游戏2》拆解",
+         "content_text": "完整机制。" * 500, "voteup_count": 500, "content_url": "u9", "source_keyword": "关键词乙"},
+    ]
+    input_path.write_text(
+        "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in rows), encoding="utf-8"
+    )
+    output = tmp_path / "selected"
+    monkeypatch.setattr(sys, "argv", [
+        "select_zhihu_candidates.py", "--input", str(input_path), "--output", str(output),
+        "--match", r"测试游戏\s*2",
+    ])
+    assert module.main() == 0
+    selected = [json.loads(l) for l in (output / "contents.jsonl").read_text(encoding="utf-8").splitlines() if l]
+    assert len(selected) == 1
+    assert selected[0]["content_text"].startswith("完整机制。")
+    # sorted() orders by codepoint, so 乙 (U+4E59) precedes 甲 (U+7532)
+    assert selected[0]["matched_keywords"] == ["关键词乙", "关键词甲"]

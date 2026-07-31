@@ -224,6 +224,9 @@ uv run main.py --platform zhihu --lt qrcode --type creator `
 - 当前 Fork 会把知乎固定 20 条的 API 首屏按 `--crawler_max_notes_count` 截断后再落盘和抓评论，低频小样本不再被强制扩大到整页。
 - 知乎一级评论会严格遵守 `--max_comments_count_singlenotes`，不会因 API 页大小默认为 10 而意外抓完整页。
 - 知乎日志只打印候选数量、内容 ID、类型和正文长度，不再把整篇文章输出到终端；全文只进入本地 JSONL/L0 包。
+- 落盘的 `content_text` 是 `extract_text_from_html` 的产物，正则删除全部标签，**配图、动图和公式的 URL 在写入前就已丢失**；知乎适配器没有 media 分支，`ENABLE_GET_MEIDAS` 对知乎无效。深度材料须用 `scripts/extract_zhihu_media.py` 重新打开原页、从 `js-initialData` 取原始正文 HTML 后恢复，详见 [deep-evidence-workflow.md](deep-evidence-workflow.md) 第 5.1 节。
+- 搜索接口返回的回答/文章记录已含完整 `content`，因此一次 `search` 就能同时得到点赞数和全文；不必为了拿正文再跑一遍 `detail`，`detail` 主要用于补评论。
+- 互动量在部分题材上与分析深度负相关。舆情型问题（争议、差评风波）会把高赞位占满，机制拆解和源码分析常年停在个位数赞。只按点赞阈值筛选会系统性漏掉深度材料，应同时用正文长度或标题命中做并集。
 - 问题与回答可能跨越多年；发布日期、编辑时间和适用游戏版本分别核对。
 - 长文逻辑完整仍只是观点证据，关键机制主张应回到录像、规则、补丁或可复现实验验证。
 
@@ -281,6 +284,10 @@ uv run main.py --platform zhihu --lt qrcode --type creator `
 | `uv sync` 下载包返回 403 | 默认清华镜像缺包、缓存路径失效或镜像拒绝 | 当前会话临时设 `UV_DEFAULT_INDEX=https://pypi.org/simple`；保留锁文件并检查是否产生纯源地址改写 |
 | 旧提交在 Windows 上 `test_no_user_info.py` 调用 `grep` 失败 | 测试依赖 GNU grep | 当前 Fork 已改为纯 Python 扫描；旧提交可在 Git Bash/WSL 复验 |
 | Skill 工具读取中文报 GBK 错误 | Windows 默认编码不是 UTF-8 | 在当前 PowerShell 命令设置 `$env:PYTHONUTF8='1'` 后重跑，不修改全局环境 |
+| 知乎 L0 里一张配图都没有 | `content_text` 是删标签后的纯文字，不是缺陷而是设计 | 用 `extract_zhihu_media.py` 从原页 `js-initialData` 恢复；不要去改 `extract_text_from_html`，其他平台依赖它 |
+| 恢复出的知乎配图数量刚好翻倍 | 知乎为每张图额外输出一份 `<noscript>` 副本 | 当前脚本已剥离 `<noscript>`；自建解析时必须同样处理，否则体量和引用都会翻倍 |
+| 知乎配图下载得到模糊小图 | 取了 `src`（懒加载缩略图）而不是 `data-original` | 按 `data-original` → `data-actualsrc` → `src` 的顺序取全分辨率 |
+| 解析知乎 JSONL 报 `Unterminated string` | 正文含 U+2028/U+0085，`str.splitlines()` 会在这些字符处切断记录 | 按 `\n` 迭代文件句柄，不要用 `splitlines()` |
 | 抖音/快手首页 `Page.goto` 报 `ERR_ABORTED` 或 30 秒超时 | Chrome 150/CDP 导航兼容问题 | 安装 Playwright Chromium，临时设 `ENABLE_CDP_MODE=False` 对照；抖音已在该路径通过，快手搜索仍为空 |
 | 抖音登录按钮点击超时 | 页面 DOM 已变化，登录遮罩或 `uc-second-verify` 拦截旧选择器 | 保持可见窗口人工完成验证并保存登录态；不绕过验证；更新登录选择器后再自动化 |
 | 快手登录成功但搜索无输出 | GraphQL 搜索返回无数据 | 用宽/窄两个关键词复验；当前测试保持 FAIL，检查响应结构和参数后再启用 |

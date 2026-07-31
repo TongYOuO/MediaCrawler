@@ -56,6 +56,25 @@ MediaCrawler 搜索结果、标题、互动量和评论首先是候选发现数�
 
 把互动量只作为同平台候选排序信号。另做最新、中长尾、指定作者和反例查询，避免只得到平台主流叙事。
 
+### 2.4 不要用点赞阈值当深度筛子
+
+「点赞超过 N」看起来是筛深度解析的省事办法，实际经常是反向的。舆情型话题（争议、差评风波、厂商决策）会把高赞位全部占满，几十字的表态拿几百上千赞；而机制拆解、源码分析、流派全指南这类真正的论证材料常年停在个位数赞。
+
+先扫描、先看交叉表，再定阈值：
+
+```powershell
+uv run python .agents/skills/research-gameplay-systems/scripts/select_zhihu_candidates.py `
+  --input "research-cases/游戏名/raw/zhihu" `
+  --output "research-cases/游戏名/raw/zhihu/selected" `
+  --match "游戏名\s*[2２二]|简称\s*[2２]" `
+  --exclude "同名噪音游戏" `
+  --min-votes 100 --min-chars 2000
+```
+
+脚本按 content_id 去重（保留最长正文）、做四级相关性分级（A 标题命中／B 正文命中／C 顺带一提／X 无关），并按 **`赞 ≥ N` 或 `正文 ≥ M 字` 的并集**选取，输出 `contents.jsonl`、`index.csv`、`longform_urls.txt` 和 `selection-report.md`。`--report-only` 只打印量级不写盘，用于定阈值前的试探。
+
+报告会明确指出有多少条**仅靠长度入选**——这个数字就是纯赞数阈值会漏掉的深度材料量。实测某续作话题：赞 ≥100 的 51 条里 36 条不足 800 字，而 44 条机制/源码/流派长文全在 100 赞以下。
+
 ## 3. 深度来源筛选
 
 ### 3.1 硬门槛
@@ -149,6 +168,40 @@ uv run python .agents/skills/research-gameplay-systems/scripts/build_zhihu_l0.py
 
 输出 `documents.jsonl`、`segments.jsonl`、`review_queue.csv` 和 `manifest.json`。每个段落保留原始 JSONL 文件、行号、正文哈希、URL 与 `segment_id`。默认拒绝少于 800 字的内容，阈值可按题材调整，但不得把搜索摘要当全文。全文通过只说明“可深读”，不说明“高质量”；在 `review_queue.csv` 填完六维评分和独立性分组后才决定纳入。
 
+### 5.1 正文配图、动图与公式
+
+`content_text` 只是纯文字。`tools/crawler_util.py` 的 `extract_text_from_html` 用 `re.sub(r'<[^>]+>', '', html)` 删除全部标签，**图片 URL 在写入 JSONL 之前就已经不存在**，知乎适配器也没有任何 media 分支（`ENABLE_GET_MEIDAS` 只作用于小红书、抖音、B站和微博）。设计拆解类长文的数值表、卡表、关卡结构图、伤害结算示意和演示动图常常承载全部论证，只拿到文字等于丢掉论据。
+
+对已入选的深度材料补跑：
+
+```powershell
+uv run python .agents/skills/research-gameplay-systems/scripts/extract_zhihu_media.py `
+  --input "research-cases/游戏名/raw/zhihu/selected/contents.jsonl" `
+  --output "research-cases/游戏名/l0-private/zhihu-media" `
+  --l0-dir "research-cases/游戏名/l0-private/zhihu"
+```
+
+脚本用 `browser_data/zhihu_user_data_dir` 的已保存登录态重新打开原页，从 `js-initialData` 取回**原始正文 HTML**，然后：
+
+- 保存 `html-private/<document_id>.html`，之后重跑提取不再需要联网。
+- 剥掉知乎为每张图额外输出的 `<noscript>` 副本，避免每个资源被计两次。
+- 优先取 `data-original`（全分辨率），而不是 `src`（模糊缩略图）。
+- 公式只登记 `data-formula` / `data-tex` 的 LaTeX，不下载渲染图。
+- 按 GIF 帧数判定 `animated`，区分静态截图和演示动图。
+- 记录每个资源在纯文字中的偏移和前文片段，映射到 `segment_id`。
+
+输出 `media.jsonl` 与 `manifest.json`。引用格式为 `ZH-answer-<id>-M007 @ ZH-answer-<id>-P0003`，即“第 3 段旁边的第 7 张图”。
+
+`--no-download` 只登记 URL 不取字节，用于先评估体量；正文 HTML 已落盘，随时可以补下载。
+
+### 5.2 知乎 L0 验收
+
+- `manifest.json` 的 `documents_without_html` 必须为空，或逐条说明失败原因。
+- `segment_anchored` 应接近 `asset_count`；大量未锚定说明正文被改写或分段与取图不是同一版本。
+- 抽查 2—3 张图与其 `segment_id` 前后文是否对应；偏移是按空白归一化前计算的，属近似值，文本片段才是可靠锚点。
+- 结论依赖画面时（数值表、卡面、路径图），引用必须写到 `asset_id`，不能只写段落。
+- 图片、动图和原始 HTML 只留在 `l0-private/`，提交时只保留 `media.jsonl` 的定位和哈希。
+
 当前 Fork 会脱敏作者字段，因此“策划/高阶玩家身份”须回到公开原页人工核验，只登记与研究问题相关的公开依据，例如作者自述的从业方向、可验证赛事成绩、连续机制测试作品；不采集无关个人信息。
 
 知乎运行闭环未通过时，不得写成平台无高质量材料。可先人工保存合法获取的公开正文与 URL，再用同一分段/哈希结构登记；同时把自动采集状态记为失败。
@@ -184,6 +237,7 @@ independence_group: 原创作者或传播簇 ID
 
 - [ ] D0 候选与 L0 正文分开保存和引用。
 - [ ] B站结论有时间戳，知乎结论有段落/行号定位。
+- [ ] 知乎核心材料已恢复配图/动图/公式并锚定段落；依赖画面的结论引用到 `asset_id`。
 - [ ] 每份深度材料有版本、作者依据、质量评分和独立性分组。
 - [ ] 高影响结论至少有两名独立作者或一份来源＋直接复现。
 - [ ] 反例和失败样本已主动检索。
